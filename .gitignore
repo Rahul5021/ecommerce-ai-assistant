@@ -1,0 +1,22 @@
+# Environment variables
+.env
+
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# DuckDB database
+*.duckdb
+
+# Generated embeddings
+*.npy
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
