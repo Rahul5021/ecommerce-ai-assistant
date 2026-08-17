@@ -17,5 +17,15 @@ result = search_customer_reviews(
     top_k=8
 )
 
-print("\n--- RAG RESULTS ---\n")
-print(result)
+print("\n--- RAG CONTEXT ---\n")
+print(result["context"])
+
+print("\n--- RETRIEVED REVIEWS ---\n")
+
+for i, review in enumerate(result["reviews"], start=1):
+    print(f"Review {i}")
+    print(f"Review ID: {review['review_id']}")
+    print(f"Rating: {review['rating']}/5")
+    print(f"Similarity: {review['similarity']:.4f}")
+    print(f"Text: {review['text']}")
+    print()

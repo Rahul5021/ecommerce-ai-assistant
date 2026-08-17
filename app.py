@@ -1,7 +1,7 @@
 import streamlit as st
 
 from config import client
-from tools import *
+import tools
 
 
 st.set_page_config(
@@ -30,20 +30,61 @@ if question:
 
     with st.chat_message("assistant"):
 
+        # Clear previous RAG results
+        tools.last_retrieved_reviews.clear()
+
         chat = client.chats.create(
             model="gemini-3.6-flash",
             config={
                 "tools": [
-                    get_order_summary,
-                    get_order_status_summary,
-                    get_category_revenue,
-                    get_payment_method_summary,
-                    get_revenue_by_state,
-                    get_revenue_summary
+                    tools.get_order_summary,
+                    tools.get_order_status_summary,
+                    tools.get_category_revenue,
+                    tools.get_payment_method_summary,
+                    tools.get_revenue_by_state,
+                    tools.get_revenue_summary,
+                    tools.search_reviews
                 ]
             }
         )
 
-        response = chat.send_message(question)
+        try:
+            response = chat.send_message(question)
 
-        st.write(response.text)
+            st.write(response.text)
+
+        except Exception as e:
+            st.error(
+                "Sorry, I couldn't process your question right now."
+            )
+
+            st.caption(
+                "Please try again in a moment."
+            )
+
+            print(f"Application error: {e}")
+            
+        # Show retrieved reviews when RAG was used
+        if tools.last_retrieved_reviews:
+
+            with st.expander(
+                f"🔎 Retrieved Sources ({len(tools.last_retrieved_reviews)})"
+            ):
+
+                for i, review in enumerate(
+                    tools.last_retrieved_reviews,
+                    start=1
+                ):
+
+                    st.markdown(
+                        f"**Review {i}** · ⭐ {review['rating']}/5"
+                    )
+
+                    st.caption(
+                        f"Similarity: {review['similarity']:.4f}"
+                    )
+
+                    st.write(review["text"])
+
+                    if i < len(tools.last_retrieved_reviews):
+                        st.divider()

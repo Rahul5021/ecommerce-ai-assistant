@@ -1,4 +1,21 @@
+import streamlit as st
+
 from database import con
+from rag import create_rag, search_customer_reviews
+
+# Stores the reviews retrieved by the most recent RAG search
+last_retrieved_reviews = []
+
+# --------------------------------------------------
+# RAG system
+# --------------------------------------------------
+
+@st.cache_resource
+def load_rag():
+    return create_rag(con)
+
+
+rag_documents, rag_index = load_rag()
 
 
 def get_order_summary():
@@ -245,3 +262,30 @@ def get_revenue_summary():
         "average_order_value": float(result[2])
     }
 
+def search_reviews(question: str, top_k: int = 8):
+    """
+    Search customer reviews semantically for relevant
+    complaints, feedback, and customer experiences.
+
+    Args:
+        question: The customer's review-related question.
+        top_k: Number of relevant reviews to retrieve.
+
+    Returns:
+        Formatted customer review context for Gemini.
+    """
+
+    global last_retrieved_reviews
+
+    result = search_customer_reviews(
+        question=question,
+        rag_documents=rag_documents,
+        index=rag_index,
+        top_k=top_k
+    )
+
+    # Save structured reviews for the Streamlit UI
+    last_retrieved_reviews = result["reviews"]
+
+    # Return only the text context to Gemini
+    return result["context"]

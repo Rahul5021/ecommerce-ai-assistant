@@ -91,6 +91,7 @@ def prepare_rag_documents(con):
 # Load embeddings
 # --------------------------------------------------
 
+
 def load_embeddings():
     """
     Load the locally generated review embeddings.
@@ -106,6 +107,7 @@ def load_embeddings():
 # --------------------------------------------------
 # Build FAISS index
 # --------------------------------------------------
+
 
 def build_index(embeddings):
     """
@@ -158,11 +160,14 @@ def search_customer_reviews(
     rag_documents,
     index,
     top_k: int = 8
-) -> str:
-
+):
     """
-    Search customer reviews semantically and return
-    the most relevant reviews.
+    Search customer reviews semantically.
+
+    Returns:
+        A dictionary containing:
+        - context: formatted review context for Gemini
+        - reviews: structured retrieved reviews for the UI
     """
 
     query_embedding = embedding_model.encode(
@@ -215,4 +220,7 @@ Text: {r['text']}"""
         for i, r in enumerate(retrieved)
     )
 
-    return context
+    return {
+        "context": context,
+        "reviews": retrieved
+    }
