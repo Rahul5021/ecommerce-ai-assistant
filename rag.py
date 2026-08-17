@@ -162,7 +162,9 @@ def search_customer_reviews(
     top_k: int = 8
 ):
     """
-    Search customer reviews semantically.
+    Search customer reviews using semantic retrieval
+    with Maximal Marginal Relevance (MMR) to improve
+    diversity among retrieved reviews.
 
     Returns:
         A dictionary containing:
@@ -180,8 +182,9 @@ def search_customer_reviews(
         dtype=np.float32
     )
 
+    # Retrieve a larger candidate pool first.
     candidate_k = min(
-        50,
+        max(top_k * 5, 50),
         index.ntotal
     )
 
@@ -190,33 +193,88 @@ def search_customer_reviews(
         candidate_k
     )
 
-    retrieved = []
+    candidates = []
 
-    for score, idx in zip(
-        scores[0],
-        indices[0]
-    ):
+    for score, idx in zip(scores[0], indices[0]):
 
         if idx < 0:
             continue
 
         review = rag_documents.iloc[idx]
 
-        retrieved.append({
+        candidates.append({
+            "index": int(idx),
             "review_id": review["review_id"],
             "rating": int(review["review_score"]),
             "text": review["review_text"],
             "similarity": float(score)
         })
 
-        if len(retrieved) >= top_k:
-            break
+    # --------------------------------------------------
+    # MMR selection
+    # --------------------------------------------------
+
+    selected = []
+
+    lambda_param = 0.7
+
+    while candidates and len(selected) < top_k:
+
+        best_candidate = None
+        best_score = -float("inf")
+
+        for candidate in candidates:
+
+            relevance = candidate["similarity"]
+
+            if not selected:
+                mmr_score = relevance
+
+            else:
+                candidate_vector = index.reconstruct(
+                    candidate["index"]
+                )
+
+                max_similarity = max(
+                    float(
+                        np.dot(
+                            candidate_vector,
+                            index.reconstruct(
+                                selected_item["index"]
+                            )
+                        )
+                    )
+                    for selected_item in selected
+                )
+
+                mmr_score = (
+                    lambda_param * relevance
+                    - (1 - lambda_param) * max_similarity
+                )
+
+            if mmr_score > best_score:
+                best_score = mmr_score
+                best_candidate = candidate
+
+        selected.append(best_candidate)
+
+        candidates.remove(best_candidate)
+
+    retrieved = [
+        {
+            "review_id": review["review_id"],
+            "rating": review["rating"],
+            "text": review["text"],
+            "similarity": review["similarity"]
+        }
+        for review in selected
+    ]
 
     context = "\n\n".join(
         f"""Review {i + 1}
-Rating: {r['rating']}/5
-Similarity: {r['similarity']:.4f}
-Text: {r['text']}"""
+        Rating: {r['rating']}/5
+        Similarity: {r['similarity']:.4f}
+        Text: {r['text']}"""
         for i, r in enumerate(retrieved)
     )
 
