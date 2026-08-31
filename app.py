@@ -1,6 +1,6 @@
 import streamlit as st
 
-from config import client
+from config import client, SYSTEM_INSTRUCTION
 import tools
 
 
@@ -36,6 +36,7 @@ if question:
         chat = client.chats.create(
             model="gemini-3.6-flash",
             config={
+                "system_instruction": SYSTEM_INSTRUCTION,
                 "tools": [
                     tools.get_order_summary,
                     tools.get_order_status_summary,
