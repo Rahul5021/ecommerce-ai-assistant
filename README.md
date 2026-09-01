@@ -197,8 +197,8 @@ streamlit run app.py
 
 ## Screenshots
 
-[Add: main chat interface, and the expandable "Retrieved Sources" panel showing evidence]
-
+![alt text](gallery\image.png)
+![alt text](gallery\image-1.png)
 ## Known Limitations & Future Improvements
 
 - Review text is primarily in Portuguese (source dataset: Olist Brazilian
