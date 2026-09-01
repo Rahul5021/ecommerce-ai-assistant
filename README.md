@@ -33,40 +33,82 @@ knowledge.
 
 ## Architecture
 
-User question
-│
-▼
-Streamlit (app.py)
-│
-▼
-Gemini (tool-calling agent)
-│
-├──► SQL tools (tools.py) ──► DuckDB (ecommerce.duckdb)
-│
-└──► search_reviews (tools.py) ──► rag.py
-│
-▼
-Local embeddings (MiniLM)
-│
-▼
-FAISS (cosine similarity)
-│
-▼
-MMR re-ranking for diversity
-│
-▼
-Retrieved reviews → context → Gemini
+```text
+    ┌─────────────────────┐
+    │       User          │
+    │ Natural-language    │
+    │      question      │
+    └──────────┬──────────┘
+    │
+    ▼
+    ┌─────────────────────┐
+    │     Streamlit       │
+    │      app.py         │
+    └──────────┬──────────┘
+    │
+    ▼
+    ┌─────────────────────┐
+    │   Google Gemini     │
+    │  Tool Selection &   │
+    │   Answer Generation │
+    └───────┬─────┬───────┘
+    │     │
+    ┌──────────────┘     └──────────────┐
+    ▼                                   ▼
+    ┌─────────────────────┐             ┌─────────────────────┐
+    │ Structured Analytics│             │   Review Retrieval  │
+    │      tools.py       │             │      rag.py         │
+    └──────────┬──────────┘             └──────────┬──────────┘
+    │                                   │
+    ▼                                   ▼
+    ┌─────────────────────┐             ┌─────────────────────┐
+    │      DuckDB         │             │ SentenceTransformer │
+    │  ecommerce.duckdb   │             │     Embeddings      │
+    └─────────────────────┘             └──────────┬──────────┘
+    │
+    ▼
+    ┌─────────────────────┐
+    │       **FAISS**         │
+    │ Vector Similarity   │
+    │       Search        │
+    └──────────┬──────────┘
+    │
+    ▼
+    ┌─────────────────────┐
+    │        **MMR**          │
+    │ Diverse Review      │
+    │     Selection       │
+    └──────────┬──────────┘
+    │
+    ▼
+    ┌─────────────────────┐
+    │ Retrieved Reviews   │
+    └──────────┬──────────┘
+    │
+    ▼
+    ┌─────────────────────┐
+    │    Gemini Answer    │
+    └─────────────────────┘
+```
+
+---
 
 
 ## Tech Stack
 
-- **Frontend:** Streamlit
-- **LLM / orchestration:** Google Gemini (`gemini-3.6-flash`), tool-calling
-- **Structured data:** DuckDB
-- **Embeddings:** `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`,
-  generated and run locally (not via API)
-- **Vector search:** FAISS `IndexFlatIP` with L2-normalized vectors (cosine similarity)
-- **Retrieval refinement:** Maximal Marginal Relevance (MMR)
+| Technology            | Purpose                                            |
+| --------------------- | -------------------------------------------------- |
+| Python                | Application development                            |
+| Streamlit             | User interface                                     |
+| DuckDB                | Analytical database                                |
+| Pandas                | Data manipulation                                  |
+| NumPy                 | Numerical operations                               |
+| FAISS                 | Vector similarity search                           |
+| Sentence Transformers | Review embeddings                                  |
+| Google Gemini         | Natural-language reasoning and response generation |
+| python-dotenv         | Environment variable management                    |
+
+---
 
 ## How the RAG Pipeline Works
 
@@ -145,22 +187,7 @@ following key tables:
 
 ## Project Structure
 
-ecommerce-ai-assistant/
-├── app.py # Streamlit interface
-├── tools.py # SQL tool functions + RAG wrapper
-├── rag.py # Embedding, FAISS, MMR retrieval logic
-├── database.py # DuckDB connection
-├── config.py # Gemini client + system instruction
-├── test_rag.py # Standalone RAG test
-├── test_gemini_rag.py # Gemini + RAG integration test
-├── data/
-│ └── ecommerce.duckdb
-├── embeddings/
-│ └── local_review_embeddings.npy
-├── requirements.txt
-├── .env # GEMINI_API_KEY (not committed)
-└── .gitignore
-
+```text ecommerce-ai-assistant/ │ ├── app.py ├── config.py ├── database.py ├── rag.py ├── tools.py │ ├── test_rag.py ├── test_gemini_rag.py │ ├── requirements.txt ├── **README**.md ├── .gitignore ├── .env │ ├── data/ │   └── ... │ ├── embeddings/ │   └── local_review_embeddings.npy │ └── ecommerce.duckdb ```
 
 ## Setup
 
@@ -197,8 +224,8 @@ streamlit run app.py
 
 ## Screenshots
 
-![alt text](gallery\image.png)
-![alt text](gallery\image-1.png)
+![alt text](gallery/image.png)
+![alt text](gallery/image-1.png)
 ## Known Limitations & Future Improvements
 
 - Review text is primarily in Portuguese (source dataset: Olist Brazilian
